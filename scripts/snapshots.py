@@ -60,7 +60,7 @@ def summary(snapshot):
 
 
 def shell(title, body, style, script=''):
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1655a8"><link rel="icon" href="' + LOGO + '"><title>' + escape(title) + '</title><style>' + style + '</style></head><body><main>' + body + '</main>' + script + '</body></html>\n'
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="only light"><meta name="theme-color" content="#FAFAF9"><link rel="icon" href="' + LOGO + '"><title>' + escape(title) + '</title><style>' + style + '</style></head><body><main>' + body + '</main>' + script + '</body></html>\n'
 
 
 def render(snapshot, style, app, root, home=False):
@@ -77,7 +77,7 @@ def render(snapshot, style, app, root, home=False):
 <div id="correction-notice" class="notice" hidden>A corrected version of this list is available. <a href="#">Open correction →</a></div>
 <details class="history"><summary>Choose a date &amp; time</summary><div class="history-controls"><label>Date<select id="archive-date" disabled><option>{date}</option></select></label><label>Time<select id="archive-time" disabled><option>{meta['time']} MYT</option></select></label><button class="secondary" id="open-snapshot" disabled>View list →</button></div><p class="subtitle" id="archive-error" hidden>History could not load. <a href="{root}archive.html">Open the archive</a>.</p></details>
 <div class="filters-wrap"><div id="country-filters" class="filters" role="group" aria-label="Country filter"><button data-country="malaysia" aria-pressed="false">Malaysia <small>{malaysia}</small></button><button data-country="other" aria-pressed="false">Non-Malaysia <small>{len(snapshot['rows'])-malaysia}</small></button><button data-country="all" aria-pressed="true">All <small>{len(snapshot['rows'])}</small></button></div><p class="filter-description" id="filter-description">Showing all lines. Your choice is saved in this browser.</p></div>
-<div class="stats">''' + ''.join(f'<div class="stat"><strong data-stat="{key}">{meta["counts"][key]}</strong><span>{label}</span></div>' for key, label in GROUPS[:3]) + f'''</div><p class="draft-note">Showing <strong id="visible-count" aria-live="polite">{len(snapshot['rows'])}</strong> lines. Opens WhatsApp with a draft. Tap Send in WhatsApp to send it.</p>
+<div class="stats">''' + ''.join(f'<div class="stat {key}"><strong data-stat="{key}">{meta["counts"][key]}</strong><span>{label}</span></div>' for key, label in GROUPS[:3]) + f'''</div><p class="draft-note">Showing <strong id="visible-count" aria-live="polite">{len(snapshot['rows'])}</strong> lines. Opens WhatsApp with a draft. Tap Send in WhatsApp to send it.</p>
 <noscript><p class="notice">JavaScript is required for country filters. All numbers are shown below.</p></noscript>
 <div id="empty-filter" class="empty" hidden><p id="empty-filter-label"></p><button class="secondary" id="show-all">Show all lines</button></div>'''
     if not snapshot['rows']:
