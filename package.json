@@ -1,0 +1,15 @@
+{
+  "name": "ara-warm-up",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py' && node --test tests/country-filter.test.js tests/access.test.mjs",
+    "build": "python3 scripts/snapshots.py"
+  },
+  "dependencies": {
+    "@cloudflare/pages-plugin-cloudflare-access": "1.0.5"
+  },
+  "devDependencies": {
+    "wrangler": "4.149.0"
+  }
+}
