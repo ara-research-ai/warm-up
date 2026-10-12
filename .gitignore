@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+.outreach.lock
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+data/
+docs/
+*.log
