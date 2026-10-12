@@ -29,10 +29,11 @@ test('every static path requires a valid Access token from an Ara Google identit
     return body + '.' + sign('RSA-SHA256', Buffer.from(body), signingKey).toString('base64url');
   };
   let reads = 0;
+  let assetResponse = () => new Response('private snapshot');
   const run = (path, token, env = { CF_ACCESS_DOMAIN: domain, CF_ACCESS_AUD: audience }) => onRequest({
     request: new Request('https://ara-warm-up.pages.dev' + path, { headers: token ? { 'Cf-Access-Jwt-Assertion': token } : {} }),
     env, data: {}, functionPath: '/', waitUntil() {}, passThroughOnException() {},
-    next: () => { reads++; return new Response('private snapshot'); },
+    next: () => { reads++; return assetResponse(); },
   });
   try {
     for (const path of ['/', '/archive.json', '/snapshots/2026-10-12/example.html']) {
@@ -54,6 +55,12 @@ test('every static path requires a valid Access token from an Ara Google identit
     assert.equal(await response.text(), 'private snapshot');
     assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
     assert.equal(reads, 1);
+    // Pages redirects .html requests to their extensionless URL after authentication.
+    assetResponse = () => new Response(null, { status: 302, headers: { Location: '/snapshots/example' } });
+    const redirect = await run('/snapshots/example.html', jwt());
+    assert.equal(redirect.status, 302);
+    assert.equal(redirect.headers.get('Location'), '/snapshots/example');
+    assert.equal(redirect.headers.get('Cache-Control'), 'private, no-store');
   } finally {
     globalThis.fetch = realFetch;
     await new Promise(resolve => server.close(resolve));

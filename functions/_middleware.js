@@ -16,6 +16,7 @@ export async function onRequest(context) {
     const unverified = JSON.parse(atob(encoded));
     const aud = audiences.find(value => Array.isArray(unverified.aud) && unverified.aud.includes(value));
     if (!aud) return deny(403);
+    let authorized = false;
     const response = await cloudflareAccess({ domain, aud })({ ...context, next: async () => {
       const jwt = context.data.cloudflareAccess.JWT;
       const payload = jwt.payload;
@@ -25,6 +26,7 @@ export async function onRequest(context) {
       const identity = await jwt.getIdentity();
       if (!identity || !['google', 'gsuite'].includes(identity.idp?.type) ||
           identity.email?.toLowerCase() !== payload.email.toLowerCase()) return deny(403);
+      authorized = true;
       const asset = await context.next();
       const protectedResponse = new Response(asset.body, asset);
       protectedResponse.headers.set('Cache-Control', 'private, no-store');
@@ -32,7 +34,7 @@ export async function onRequest(context) {
       return protectedResponse;
     } });
     // Cloudflare Access handles the browser login. The origin denies bad tokens.
-    return response.status >= 300 && response.status < 400 ? deny(403) : response;
+    return authorized ? response : deny(403);
   } catch {
     return deny(403);
   }
