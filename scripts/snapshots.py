@@ -79,6 +79,7 @@ def render(snapshot, style, app, root, home=False):
 <div class="filters-wrap"><div id="country-filters" class="filters" role="group" aria-label="Country filter"><button data-country="malaysia" aria-pressed="false">Malaysia <small>{malaysia}</small></button><button data-country="other" aria-pressed="false">Non-Malaysia <small>{len(snapshot['rows'])-malaysia}</small></button><button data-country="all" aria-pressed="true">All <small>{len(snapshot['rows'])}</small></button></div><p class="filter-description" id="filter-description">Showing all lines. Your choice is saved in this browser.</p></div>
 <div class="stats">''' + ''.join(f'<div class="stat {key}"><strong data-stat="{key}">{meta["counts"][key]}</strong><span>{label}</span></div>' for key, label in GROUPS[:3]) + f'''</div><p class="draft-note">Showing <strong id="visible-count" aria-live="polite">{len(snapshot['rows'])}</strong> lines. Opens WhatsApp with a draft. Tap Send in WhatsApp to send it.</p>
 <noscript><p class="notice">JavaScript is required for country filters. All numbers are shown below.</p></noscript>
+<span id="copy-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
 <div id="empty-filter" class="empty" hidden><p id="empty-filter-label"></p><button class="secondary" id="show-all">Show all lines</button></div>'''
     if not snapshot['rows']:
         body += '<p class="empty">No phones in this snapshot.</p>'
@@ -91,7 +92,7 @@ def render(snapshot, style, app, root, home=False):
             status = label + (f', Day {row["day"]}' if key == 'warmup' and row.get('day') else '')
             link = 'https://wa.me/' + row['number'] + ('?text=' + quote(row['message'], safe='') if row.get('message') else '')
             message = escape(row.get('message') or 'No greeting was recorded for this historical link.')
-            body += f'<article class="phone-card" data-phone="{row["number"]}"><div class="card-head"><div class="card-name">{escape(row["name"])}</div><span class="badge {key}">{status}</span></div><div class="phone-number">{escape(formatted_number(row["number"]))}</div><p class="draft">{message}</p><a class="open-whatsapp" target="_blank" rel="noopener noreferrer" href="{escape(link, quote=True)}">Open in WhatsApp <span aria-hidden="true">↗</span></a></article>'
+            body += f'<article class="phone-card" data-phone="{row["number"]}"><div class="card-head"><div class="card-name">{escape(row["name"])}</div><span class="badge {key}">{status}</span></div><div class="phone-number"><span class="number-value">{escape(formatted_number(row["number"]))}</span><button type="button" class="copy-number" aria-label="Copy phone number for {escape(row["name"], quote=True)}" hidden>Copy</button></div><p class="copy-error" hidden>Could not copy automatically. Select the number to copy it.</p><p class="draft">{message}</p><a class="open-whatsapp" target="_blank" rel="noopener noreferrer" href="{escape(link, quote=True)}">Open in WhatsApp <span aria-hidden="true">↗</span></a></article>'
         body += '</div></section>'
     body += f'<footer class="footer"><span>{escape(snapshot["coverage"])}</span><a href="{root}archive.html">Browse history →</a></footer>'
     config = {'id': snapshot['id'], 'date': meta['date'], 'root': root, 'home': home}

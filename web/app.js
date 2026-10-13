@@ -30,6 +30,65 @@ if (typeof document !== 'undefined' && document.getElementById('country-filters'
   const filters = [...document.querySelectorAll('[data-country]')];
   const countryNames = { all: 'all lines', malaysia: 'Malaysian lines', other: 'non-Malaysian lines' };
 
+  async function copyNumber(number) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(number);
+        return;
+      } catch { /* Try the selection-based fallback when clipboard access is denied. */ }
+    }
+    const field = document.createElement('textarea');
+    field.value = number;
+    field.readOnly = true;
+    field.style.cssText = 'position:fixed;top:0;left:-9999px;font-size:16px';
+    const focused = document.activeElement;
+    document.body.append(field);
+    try {
+      field.focus();
+      field.select();
+      field.setSelectionRange(0, number.length);
+      if (!document.execCommand('copy')) throw Error('Copy unavailable');
+    } finally {
+      field.remove();
+      if (focused) focused.focus({ preventScroll: true });
+    }
+  }
+
+  for (const card of cards) {
+    const button = card.querySelector('.copy-number');
+    const error = card.querySelector('.copy-error');
+    const status = document.getElementById('copy-status');
+    let feedbackTimer;
+    let copying = false;
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      if (copying) return;
+      copying = true;
+      clearTimeout(feedbackTimer);
+      button.setAttribute('aria-busy', 'true');
+      error.hidden = true;
+      status.textContent = '';
+      try {
+        await copyNumber('+' + card.dataset.phone);
+        button.textContent = 'Copied';
+        button.dataset.copied = 'true';
+        status.textContent = `Number copied for ${card.querySelector('.card-name').textContent}.`;
+      } catch {
+        button.textContent = 'Try again';
+        delete button.dataset.copied;
+        error.hidden = false;
+        status.textContent = error.textContent;
+      } finally {
+        copying = false;
+        button.removeAttribute('aria-busy');
+        feedbackTimer = setTimeout(() => {
+          button.textContent = 'Copy';
+          delete button.dataset.copied;
+        }, 2000);
+      }
+    });
+  }
+
   function applyCountry(value) {
     country = COUNTRIES.includes(value) ? value : 'all';
     for (const button of filters) button.setAttribute('aria-pressed', String(button.dataset.country === country));
