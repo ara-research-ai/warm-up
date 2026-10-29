@@ -13,6 +13,16 @@ SKILL=Path.home()/'.codex'/'skills'/'mongodb-production-readonly'
 MYT=ZoneInfo('Asia/Kuala_Lumpur')
 
 
+def calendar_warmup_day(started_at, captured_at):
+    if not isinstance(started_at, str):
+        raise ValueError('Current warm-up cycle has no start date.')
+    start=datetime.fromisoformat(started_at.replace('Z','+00:00'))
+    captured=datetime.fromisoformat(captured_at.replace('Z','+00:00'))
+    if start.tzinfo is None or captured.tzinfo is None or start > captured:
+        raise ValueError('Invalid or future warm-up start date.')
+    return (captured.astimezone(MYT).date()-start.astimezone(MYT).date()).days+1
+
+
 def greetings(day):
     weekday=day.strftime('%A')
     prefixes=['Hi!', 'Hello!', 'Hey!', 'Hi there!', 'Hello there!', 'Hey there!']
@@ -61,10 +71,12 @@ def collect(run_key):
         raise RuntimeError('Not enough unique greetings. No snapshot was written.')
     for row,message in zip(rows,messages):
         row['number']=re.sub(r'\D','',row['number'])
-        if row['group']=='warmup' and row['number'] in manager_map:
+        if row['group']=='warmup' and 'calendarStartedAt' in row:
+            row['day']=calendar_warmup_day(row.pop('calendarStartedAt'), snapshot['capturedAt'])
+        elif row['group']=='warmup' and row['number'] in manager_map:
             row['day']=int(manager_map[row['number']]['dayNumber'])
         row['message']=message
-    snapshot.update({'source':'live','coverage':'Warmup, cooldown and ready to activate. Inactive Super Admin clients excluded.','runKey':run_key,'rows':rows})
+    snapshot.update({'source':'live','coverage':'Warmup, cooldown and ready to activate. Inactive Super Admin clients and DUITGINI excluded. RenMoney 23-27 show calendar days in the current warm-up cycle.','runKey':run_key,'rows':rows})
     return snapshot
 
 
