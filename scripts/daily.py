@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from collect import collect
 from deploy import deploy
 from publish import git, ROOT
+from progress import advance_warmup_days
 from snapshots import build, store_snapshot, STATE
 
 
@@ -18,7 +19,10 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--publish',action='store_true',help='Deploy private generated pages to Cloudflare Pages.')
     parser.add_argument('--daily',action='store_true',help='Reuse an already completed daily snapshot on retry.')
+    parser.add_argument('--advance-days',action='store_true',help='Confirm one warm-up day for eligible listed accounts before the daily snapshot.')
     args=parser.parse_args()
+    if args.advance_days and not args.daily:
+        raise RuntimeError('--advance-days requires --daily; manual refreshes never credit warm-up days.')
     os.umask(0o077)
     STATE.mkdir(parents=True,exist_ok=True,mode=0o700)
     with open(STATE/'daily.lock','w') as lock:
@@ -41,13 +45,17 @@ def main():
         previous=[json.loads(path.read_text()) for path in (STATE/'data').glob('*.json')]
         existing=next((item for item in previous if item.get('runKey')==run_key),None)
         snapshot=existing or collect(run_key)
+        if args.advance_days and not existing:
+            progress=advance_warmup_days(snapshot)
+            snapshot=collect(run_key)
+            snapshot['counterProgress']=progress
         store_snapshot(STATE,snapshot)
         archive=build()
         if args.publish:
             deployment=deploy()
         else:
             deployment=None
-        print(json.dumps({'snapshot':snapshot['id'],'deployment':deployment,'path':next(item['path'] for item in archive['snapshots'] if item['id']==snapshot['id']),'count':len(snapshot['rows']),'capturedAt':snapshot['capturedAt']}))
+        print(json.dumps({'snapshot':snapshot['id'],'deployment':deployment,'path':next(item['path'] for item in archive['snapshots'] if item['id']==snapshot['id']),'count':len(snapshot['rows']),'capturedAt':snapshot['capturedAt'],'counterProgress':snapshot.get('counterProgress')}))
 
 
 if __name__=='__main__':

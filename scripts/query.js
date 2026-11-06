@@ -28,7 +28,7 @@ const rows = accounts.filter(a=>a.business_id&&active.has(a.business_id.toString
   const cooldown = a.status==='cooldown'||a.sim_recovery?.state==='cooldown'||a.warmup?.state==='cooldown'||a.sim_recovery?.cooldown_until>now;
   const group = cooldown?'cooldown':a.warmup?.state==='ready_to_activate'?'ready':'warmup';
   const calendar = group==='warmup' && calendarIds.has(a._id.toString());
-  return {name:a.name, number:a.phone_number, group, day:group==='warmup'?(a.warmup?.completed_days??0)+1:null,
+  return {accountId:a._id.toString(), name:a.name, number:a.phone_number, group, day:group==='warmup'?(a.warmup?.completed_days??0)+1:null,
     ...(calendar ? {calendarStartedAt: JSON.parse(EJSON.stringify(a)).warmup?.started_at?.$date ?? null} : {})};
 });
 print(JSON.stringify({capturedAt:new Date().toISOString(),rows}));
